@@ -99,24 +99,6 @@
     }
 
     // Menambahkan GeoJson ke WebGIS
-    var overLayers = [
-      {
-        name: "Bidang Sebelum Perbaikan",
-        layer: new L.GeoJSON.AJAX("Data Geojson/Analisa_anomali_Punung.geojson", {
-          onEachFeature: popUp,
-          style: styleFeature,
-        }).addTo(map),
-      },
-      {
-        name: "Bidang Sesudah Perbaikan",
-        layer: new L.GeoJSON.AJAX("Data Geojson/Perbaikan_punung.geojson", {
-          onEachFeature: popUp,
-          style: styleFeatureCatatan,
-        }),
-      },
-    ];
-
-    var panelLayers = new L.Control.PanelLayers([], overLayers);
 
     // Menambahkan  Legenda
     var legend = L.control({ position: "bottomright" });
@@ -148,6 +130,25 @@
     legend.addTo(map);
 
     // Tombol interaktif untuk mengaktifkan/mematikan layer tanpa mengubah tampilan peta
+    var beforeLayer = new L.GeoJSON.AJAX("Data Geojson/Analisa_anomali_Punung.geojson", {
+      onEachFeature: popUp,
+      style: styleFeature,
+    });
+
+    var afterLayer = new L.GeoJSON.AJAX("Data Geojson/Perbaikan_punung.geojson", {
+      onEachFeature: popUp,
+      style: styleFeatureCatatan,
+    });
+
+    var overLayers = [
+      { name: "Bidang Sebelum Perbaikan", layer: beforeLayer },
+      { name: "Bidang Sesudah Perbaikan", layer: afterLayer },
+    ];
+
+    beforeLayer.addTo(map); // Pastikan layer muncul saat peta dimuat
+
+    var panelLayers = new L.Control.PanelLayers([], overLayers);
+
     var controlContainer = L.control({ position: "topright" });
     controlContainer.onAdd = function (map) {
       var container = L.DomUtil.create("div", "layer-control");
@@ -180,14 +181,17 @@
       btnAfter.style.background = "#28a745";
       btnAfter.style.color = "white";
 
-      var afterLayer = new L.GeoJSON.AJAX("Data Geojson/Perbaikan_punung.geojson", {
-        onEachFeature: popUp,
-        style: styleFeatureCatatan,
-      });
+      btnBefore.onclick = function () {
+        if (map.hasLayer(beforeLayer)) {
+          map.removeLayer(beforeLayer);
+          btnBefore.style.background = "#555";
+        } else {
+          map.addLayer(beforeLayer);
+          btnBefore.style.background = "#007bff";
+        }
+      };
 
       btnAfter.onclick = function () {
-        var center = map.getCenter();
-        var zoom = map.getZoom();
         if (map.hasLayer(afterLayer)) {
           map.removeLayer(afterLayer);
           btnAfter.style.background = "#555";
@@ -195,10 +199,11 @@
           map.addLayer(afterLayer);
           btnAfter.style.background = "#28a745";
         }
-        map.setView(center, zoom, { animate: false });
       };
 
+      container.appendChild(btnBefore);
       container.appendChild(btnAfter);
+
       return container;
     };
     controlContainer.addTo(map);
